@@ -13,7 +13,7 @@
 
 ## URLs
 - **Production**: https://3000-iehn2fxqx1t03hszy8bg3-ad490db5.sandbox.novita.ai
-- **GitHub**: (To be configured)
+- **GitHub**: https://github.com/criadacasa/podcastfy-saas
 
 ## Currently Completed Features
 
