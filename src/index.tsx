@@ -1,11 +1,15 @@
 import { Hono } from 'hono'
 import { renderer } from './renderer'
 import { cors } from 'hono/cors'
+import settings from './routes/settings'
 
 const app = new Hono()
 
 // Enable CORS for API routes
 app.use('/api/*', cors())
+
+// Mount settings routes
+app.route('/', settings)
 
 // Apply renderer to HTML routes
 app.use(renderer)
@@ -27,9 +31,14 @@ app.get('/', (c) => {
                 <p class="text-sm text-gray-500">Transform Content into Engaging Podcasts</p>
               </div>
             </div>
-            <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-              <i class="fas fa-history mr-2"></i>My Podcasts
-            </button>
+            <div class="flex gap-3">
+              <a href="/settings" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                <i class="fas fa-cog mr-2"></i>Settings
+              </a>
+              <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                <i class="fas fa-history mr-2"></i>My Podcasts
+              </button>
+            </div>
           </div>
         </div>
       </header>

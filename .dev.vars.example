@@ -1,0 +1,32 @@
+# API Keys for Podcastfy SaaS
+# Copy this file to .dev.vars for local development
+# For production, use: wrangler secret put KEY_NAME
+
+# OpenAI API Key (for GPT models and TTS)
+OPENAI_API_KEY=sk-...
+
+# Anthropic API Key (for Claude models)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Google Gemini API Key (for Gemini models and Google TTS)
+GOOGLE_API_KEY=AIza...
+
+# ElevenLabs API Key (for premium TTS voices)
+ELEVENLABS_API_KEY=...
+
+# Azure OpenAI Configuration (optional)
+AZURE_OPENAI_API_KEY=...
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+
+# HuggingFace API Key (for local LLMs)
+HUGGINGFACE_API_KEY=hf_...
+
+# Microsoft Edge TTS (no key required, but can configure)
+# EDGE_TTS_ENABLED=true
+
+# Admin Password for Settings Page (change this!)
+ADMIN_PASSWORD=your-secure-password-here
+
+# Optional: Backend Service URL if Podcastfy is hosted separately
+# PODCASTFY_BACKEND_URL=https://your-podcastfy-backend.com

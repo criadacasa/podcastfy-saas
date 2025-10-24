@@ -96,6 +96,27 @@ Currently using in-memory mock data structure:
 - Cloudflare R2 Storage - Store generated audio files and transcripts
 - Cloudflare KV - Cache API responses and temporary data
 
+## 🔑 API Keys Configuration
+
+**IMPORTANT**: Before deploying to production, you need to configure API keys for the podcast generation services.
+
+See **[API_KEYS_SETUP.md](./API_KEYS_SETUP.md)** for detailed instructions on:
+- Which API keys you need (OpenAI, Anthropic, Google, ElevenLabs, etc.)
+- How to obtain API keys from each provider
+- How to configure keys using Wrangler CLI
+- Cost estimates and recommended combinations
+- Security best practices
+
+**Quick Start**:
+1. Visit `/settings` page after deployment
+2. Authenticate with admin password
+3. Follow the instructions to set API keys using Wrangler CLI
+
+**Required Minimum**:
+- At least ONE LLM provider (OpenAI/Anthropic/Google)
+- At least ONE TTS provider (ElevenLabs or free Microsoft Edge TTS)
+- Admin password for settings page access
+
 ## Features Not Yet Implemented
 
 ### 🔄 Backend Integration

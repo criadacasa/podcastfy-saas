@@ -28,6 +28,7 @@ export const renderer = jsxRenderer(({ children }) => {
         
         {/* Custom JavaScript */}
         <script src="/static/app.js"></script>
+        <script src="/static/settings.js"></script>
       </body>
     </html>
   )
