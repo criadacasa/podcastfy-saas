@@ -12,8 +12,11 @@
   - Progress tracking and result management
 
 ## URLs
-- **Production**: https://3000-iehn2fxqx1t03hszy8bg3-ad490db5.sandbox.novita.ai
+- **Production**: https://podcastfy-saas.pages.dev
+- **Latest Deployment**: https://42e2fd91.podcastfy-saas.pages.dev
+- **Settings Page**: https://podcastfy-saas.pages.dev/settings
 - **GitHub**: https://github.com/criadacasa/podcastfy-saas
+- **Sandbox Demo**: https://3000-iehn2fxqx1t03hszy8bg3-ad490db5.sandbox.novita.ai
 
 ## Currently Completed Features
 
