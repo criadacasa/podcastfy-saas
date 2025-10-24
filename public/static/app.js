@@ -118,7 +118,11 @@ document.addEventListener('DOMContentLoaded', function() {
       resultSection.classList.add('hidden');
 
       try {
-        // Call API to generate podcast
+        // Update progress: Processing
+        progressBar.style.width = '30%';
+        progressText.textContent = '30%';
+
+        // Call API to generate podcast (REAL IMPLEMENTATION)
         const response = await axios.post('/api/generate', {
           contentType: currentContentType,
           input: inputData,
@@ -126,14 +130,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (response.data.success) {
-          // Simulate progress (in production, you'd poll /api/status/:jobId)
-          simulateProgress(response.data.jobId);
+          // Update progress: Complete
+          progressBar.style.width = '100%';
+          progressText.textContent = '100%';
+
+          // Show result with actual audio
+          setTimeout(() => {
+            showResult(response.data.audioUrl, response.data.transcript);
+          }, 500);
         } else {
           throw new Error(response.data.error || 'Generation failed');
         }
       } catch (error) {
         console.error('Error generating podcast:', error);
-        alert('Failed to generate podcast: ' + error.message);
+        const errorMessage = error.response?.data?.error || error.message || 'Unknown error';
+        alert('Failed to generate podcast: ' + errorMessage);
         resetUI();
       }
     });
@@ -199,49 +210,29 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
-  function simulateProgress(jobId) {
-    let progress = 0;
-    const steps = [
-      { progress: 20, text: 'Processing content...', delay: 1000 },
-      { progress: 50, text: 'Generating transcript...', delay: 2000 },
-      { progress: 80, text: 'Creating audio...', delay: 2000 },
-      { progress: 100, text: 'Finalizing...', delay: 1000 }
-    ];
-
-    let currentStep = 0;
-
-    function updateProgress() {
-      if (currentStep >= steps.length) {
-        showResult();
-        return;
-      }
-
-      const step = steps[currentStep];
-      progressBar.style.width = step.progress + '%';
-      progressText.textContent = step.progress + '%';
-
-      setTimeout(() => {
-        currentStep++;
-        updateProgress();
-      }, step.delay);
-    }
-
-    updateProgress();
-  }
-
-  function showResult() {
+  function showResult(audioUrl, transcript) {
     progressSection.classList.add('hidden');
     resultSection.classList.remove('hidden');
     
-    // Set a demo audio title
+    // Set the podcast title
     const title = document.getElementById('podcast-title');
     if (title) {
       title.textContent = 'Generated Podcast - ' + new Date().toLocaleString();
     }
 
-    // In production, set the actual audio source
-    // const audioSource = document.getElementById('audio-source');
-    // audioSource.src = 'url-to-generated-audio.mp3';
+    // Set the actual audio source
+    const audioSource = document.getElementById('audio-source');
+    const audioPlayer = audioSource.parentElement;
+    if (audioSource && audioUrl) {
+      audioSource.src = audioUrl;
+      audioPlayer.load(); // Reload the audio player with new source
+      console.log('Audio loaded:', audioUrl);
+    }
+
+    // Store transcript for later viewing
+    if (transcript) {
+      window.currentTranscript = transcript;
+    }
     
     resetUI();
   }
@@ -268,17 +259,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Download and Share handlers (placeholders for now)
+  // Download, Transcript, and Share handlers
   document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
     if (btn.textContent.includes('Download Audio')) {
-      alert('Download functionality will be implemented with backend integration');
+      const audioSource = document.getElementById('audio-source');
+      if (audioSource && audioSource.src) {
+        // Create download link
+        const a = document.createElement('a');
+        a.href = audioSource.src;
+        a.download = 'podcast-' + Date.now() + '.mp3';
+        a.click();
+      } else {
+        alert('No audio available to download');
+      }
     } else if (btn.textContent.includes('View Transcript')) {
-      alert('Transcript viewer will be implemented with backend integration');
+      if (window.currentTranscript) {
+        // Show transcript in a modal/alert (can be enhanced with a proper modal later)
+        const transcriptWindow = window.open('', 'Transcript', 'width=600,height=400');
+        transcriptWindow.document.write(`
+          <html>
+            <head>
+              <title>Podcast Transcript</title>
+              <style>
+                body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+                h1 { color: #6b46c1; }
+                pre { white-space: pre-wrap; background: #f7fafc; padding: 15px; border-radius: 5px; }
+              </style>
+            </head>
+            <body>
+              <h1>Podcast Transcript</h1>
+              <pre>${window.currentTranscript}</pre>
+            </body>
+          </html>
+        `);
+      } else {
+        alert('No transcript available. Enable "Generate Transcript" option when creating podcasts.');
+      }
     } else if (btn.textContent.includes('Share')) {
-      alert('Share functionality will be implemented with backend integration');
+      const audioSource = document.getElementById('audio-source');
+      if (audioSource && audioSource.src) {
+        // Copy audio URL to clipboard
+        navigator.clipboard.writeText(window.location.origin + audioSource.src).then(() => {
+          alert('Audio URL copied to clipboard!');
+        }).catch(() => {
+          alert('Audio URL: ' + window.location.origin + audioSource.src);
+        });
+      } else {
+        alert('No audio available to share');
+      }
     }
   });
 

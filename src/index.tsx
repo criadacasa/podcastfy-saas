@@ -2,8 +2,15 @@ import { Hono } from 'hono'
 import { renderer } from './renderer'
 import { cors } from 'hono/cors'
 import settings from './routes/settings'
+import { generateScript, generateAudio, storeAudio } from './lib/podcast-generator'
 
-const app = new Hono()
+type Bindings = {
+  OPENAI_API_KEY?: string
+  GOOGLE_API_KEY?: string
+  PODCAST_STORAGE: R2Bucket
+}
+
+const app = new Hono<{ Bindings: Bindings }>()
 
 // Enable CORS for API routes
 app.use('/api/*', cors())
@@ -347,32 +354,134 @@ app.get('/', (c) => {
   )
 })
 
-// API Routes
+// API Routes - Real Implementation
 app.post('/api/generate', async (c) => {
   try {
     const body = await c.req.json()
+    const { contentType, input, config } = body
     
-    // Here you would integrate with the Podcastfy Python backend
-    // For now, return a mock response
-    return c.json({
-      success: true,
-      message: 'Podcast generation started',
-      jobId: 'job_' + Date.now()
-    })
-  } catch (error) {
-    return c.json({ success: false, error: 'Failed to start generation' }, 500)
+    // Validate API key
+    const openaiKey = c.env.OPENAI_API_KEY
+    if (!openaiKey) {
+      return c.json({ 
+        success: false, 
+        error: 'OpenAI API key not configured. Please configure it in Settings.' 
+      }, 500)
+    }
+
+    // Validate input
+    if (!input || !config) {
+      return c.json({ 
+        success: false, 
+        error: 'Invalid request: missing input or configuration' 
+      }, 400)
+    }
+
+    // Generate unique job ID
+    const jobId = 'podcast_' + Date.now()
+
+    // Start generation (this will be synchronous for MVP, but can be made async later)
+    try {
+      console.log('Starting podcast generation:', { contentType, config })
+
+      // Step 1: Generate script using GPT-4
+      console.log('Generating script with GPT-4...')
+      const script = await generateScript(
+        { contentType, input },
+        config,
+        openaiKey
+      )
+
+      if (!script) {
+        throw new Error('Failed to generate script')
+      }
+
+      console.log('Script generated, length:', script.length)
+
+      // Step 2: Convert script to audio using TTS
+      console.log('Converting script to audio with TTS...')
+      const audioBuffer = await generateAudio(script, config, openaiKey)
+
+      if (!audioBuffer) {
+        throw new Error('Failed to generate audio')
+      }
+
+      console.log('Audio generated, size:', audioBuffer.byteLength)
+
+      // Step 3: Store audio in R2
+      console.log('Storing audio in R2...')
+      const filename = await storeAudio(audioBuffer, jobId, c.env.PODCAST_STORAGE)
+
+      console.log('Audio stored:', filename)
+
+      // Return success with audio URL
+      return c.json({
+        success: true,
+        message: 'Podcast generated successfully',
+        jobId,
+        audioUrl: `/api/audio/${filename}`,
+        transcript: config.generateTranscript ? script : undefined,
+        duration: Math.round(audioBuffer.byteLength / 16000) // Rough estimate
+      })
+
+    } catch (error: any) {
+      console.error('Generation error:', error)
+      return c.json({ 
+        success: false, 
+        error: `Generation failed: ${error.message}`,
+        jobId 
+      }, 500)
+    }
+
+  } catch (error: any) {
+    console.error('API error:', error)
+    return c.json({ 
+      success: false, 
+      error: error.message || 'Failed to start generation' 
+    }, 500)
   }
 })
 
+// Serve audio files from R2
+app.get('/api/audio/:filename', async (c) => {
+  try {
+    const filename = c.req.param('filename')
+    
+    // Validate filename format
+    if (!filename.match(/^podcast-podcast_\d+\.mp3$/)) {
+      return c.json({ error: 'Invalid filename' }, 400)
+    }
+
+    const object = await c.env.PODCAST_STORAGE.get(filename)
+    
+    if (!object) {
+      return c.json({ error: 'Audio file not found' }, 404)
+    }
+
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'Cache-Control': 'public, max-age=31536000',
+        'Content-Disposition': `inline; filename="${filename}"`
+      }
+    })
+  } catch (error: any) {
+    console.error('Error serving audio:', error)
+    return c.json({ error: 'Failed to serve audio file' }, 500)
+  }
+})
+
+// Status endpoint (for future async implementation)
 app.get('/api/status/:jobId', async (c) => {
   const jobId = c.req.param('jobId')
   
-  // Mock status response
+  // For now, this is not used since generation is synchronous
+  // In future, implement job queue and track status
   return c.json({
     jobId,
-    status: 'processing',
-    progress: 45,
-    step: 'Generating transcript'
+    status: 'completed',
+    progress: 100,
+    step: 'Complete'
   })
 })
 
